@@ -282,7 +282,19 @@
             showNotification("Server Daily Quota Exceeded. Please try again later.");
             return null;
           }
-          if (!response.ok) throw new Error("Processing failed on the server.");
+          if (response.status === 410) { // Foreground removal error
+            showNotification("Cannot Detect Face and Background in Image.");
+            return null;
+          }
+          if (response.status === 500) { //  api exhaustion error
+            showNotification("Internal Error ,try again later.");
+            return null;
+          }
+
+
+
+
+          if (!response.ok) throw new Error("Processing failed on the server, please try again later.");
           return response.blob();
         })
         .then(blob => {

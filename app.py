@@ -225,9 +225,18 @@ def process():
     )
     print(f"DEBUG: remove.bg response status = {response.status_code}")
     if response.status_code != 200:
-        print(f"ERROR: Background removal failed - {response.text}")
-        send_email()
-        return f"Background removal failed: {response.text}", 500
+     print(f"ERROR: Background removal failed - {response.text}")
+     try:
+        error_info = response.json()
+        if error_info.get("errors"):
+            error_code = error_info["errors"][0].get("code", "unknown_error")
+            return {"error": error_code}, 410
+     except Exception as ex:
+        print("Failed to parse error details:", ex)
+
+     send_email()
+     return {"error": "bg_removal_failed"}, 500
+
 
     bg_removed = BytesIO(response.content)
     img = Image.open(bg_removed)
