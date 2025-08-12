@@ -301,7 +301,7 @@ def process():
         passport_img = img.convert("RGB")
 
     # Step 6: Resize and border
-    passport_img = passport_img.resize((passport_width, passport_height), Image.LANCZOS)
+    passport_img = ImageOps.fit((passport_width, passport_height), Image.LANCZOS)
     passport_img = ImageOps.expand(passport_img, border=border, fill='black')
     print(f"DEBUG: Passport image size after border = {passport_img.size}")
 
