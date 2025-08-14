@@ -12,7 +12,7 @@ from flask_limiter.errors import RateLimitExceeded
 from datetime import datetime, timedelta
 import pytz
 from werkzeug.middleware.proxy_fix import ProxyFix
-import redis
+
 
 app = Flask(__name__)
 
@@ -20,11 +20,10 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 
 app.secret_key = 'secret_key' 
 
-#  Redis URL from environment variable 
-redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+
 
 # === Rate limiter setup ===
-limiter = Limiter(get_remote_address, app=app,storage_uri=redis_url,)
+limiter = Limiter(get_remote_address, app=app)
 
 #==exempt users with a secret code from rate limiting ===
 @limiter.request_filter
@@ -142,7 +141,7 @@ def handle_ratelimit(e):
 
 
 # Cloudinary and remove.bg API setup
-REMOVE_BG_API_KEY = os.getenv("REMOVE_BG_API_KEY", "dSKbkJd9Be1o2wAsj38G6aX7")
+REMOVE_BG_API_KEY = os.getenv("REMOVE_BG_API_KEY", "mWePW98SvSPC8kCfKz4Px2zX")
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME", "dcajb02df"),
     api_key=os.getenv("CLOUDINARY_API_KEY", "862192414383365"),
@@ -185,7 +184,7 @@ def index():
     return render_template('index.html')
 
 @app.route('/process', methods=['POST'])
-@limiter.limit("45 per day")
+#@limiter.limit("45 per day")
 def process():
     print("==== /process endpoint hit ====")
 
@@ -235,6 +234,7 @@ def process():
         print("Failed to parse error details:", ex)
 
      send_email()
+     print("DEBUG: Sending email notification for background removal failure")
      return {"error": "bg_removal_failed"}, 500
 
 
@@ -301,7 +301,7 @@ def process():
         passport_img = img.convert("RGB")
 
     # Step 6: Resize and border
-    passport_img = ImageOps.fit((passport_width, passport_height), Image.LANCZOS)
+    passport_img = ImageOps.fit(passport_img, (passport_width, passport_height), method=Image.LANCZOS)
     passport_img = ImageOps.expand(passport_img, border=border, fill='black')
     print(f"DEBUG: Passport image size after border = {passport_img.size}")
 
