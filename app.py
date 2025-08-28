@@ -1,4 +1,5 @@
 from flask import Flask, request, render_template, send_file
+from gradio_client import Client, handle_file
 from PIL import Image, ImageOps
 from io import BytesIO
 import requests
@@ -12,8 +13,11 @@ import base64
 app = Flask(__name__)
 
 
-# Cloudinary and remove.bg  API setup
-REMOVE_BG_API_KEY = os.getenv("REMOVE_BG_API_KEY", "mWePW98SvSPC8kCfKz4Px2zX")
+
+
+
+# Cloudinary and remove.bg API setup
+REMOVE_BG_API_KEY = os.getenv("REMOVE_BG_API_KEY", "p1SChAJPV2sjC4PqWjtQVJ8w")
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME", "dcajb02df"),
     api_key=os.getenv("CLOUDINARY_API_KEY", "862192414383365"),
@@ -99,32 +103,32 @@ def process():
 
     # Step 4: Upscale via Hugging Face
     print("DEBUG: Downloading image from Cloudinary for enhancement...")
-    cloud_img_data = requests.get(image_url).content
-    img = Image.open(BytesIO(cloud_img_data))
-    buf = BytesIO()
-    img.save(buf, format="PNG")
-    base64_img = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
-    hf_api = "https://nightfury-image-face-upscale-restoration-gfpgan.hf.space/api/predict"
-    payload = {
-        "data": [
-            base64_img,
-            "v1.4",
-            2.0
-        ]
-    }
-    print("DEBUG: Sending image to Hugging Face enhancer...")
-    response = requests.post(hf_api, json=payload)
-    print(f"DEBUG: HF response status = {response.status_code}")
-    if response.status_code != 200:
-        print(f"ERROR: HF enhancement failed - {response.text}")
-        return f"Upscaler API failed: {response.text}", 500
+    image_dict = handle_file(image_url)
 
-    result = response.json()
-    output_base64 = result["data"][0].split(",")[1]
-    img_data = base64.b64decode(output_base64)
-    img = Image.open(BytesIO(img_data))
-    print(f"DEBUG: Enhanced image mode = {img.mode}")
+    gallery = [{"image": image_dict, "caption": None}]
+
+    client = Client("naman14113114/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN")
+
+    result = client.predict(
+        gallery=gallery,
+        face_restoration="GFPGANv1.4.pth",
+        upscale_model="SRVGG, realesr-general-x4v3.pth",
+        scale=2,
+        face_detection="retinaface_resnet50",
+        face_detection_threshold=10,
+        face_detection_only_center=False,
+        outputWithModelName=True,
+        api_name="/inference"
+    )
+
+    last_image_path = result[1][-1]
+
+
+    
+    img = Image.open(last_image_path)
+
+    
 
     # Step 5: RGB conversion
     if img.mode in ("RGBA", "LA"):
