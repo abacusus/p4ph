@@ -12,7 +12,7 @@ import base64
 app = Flask(__name__)
 
 
-# Cloudinary and remove.bg API setup
+# Cloudinary and remove.bg  API setup
 REMOVE_BG_API_KEY = os.getenv("REMOVE_BG_API_KEY", "mWePW98SvSPC8kCfKz4Px2zX")
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME", "dcajb02df"),
